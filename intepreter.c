@@ -7,13 +7,13 @@
 #define MAXIMUM_ARGS 10
 /**
  * main - creates a shell
+ * @line: maximum length of line
+ * @args: maximum number of arguments
+ * @state: status of shell
  * Return: 0 (Success)
  */
-int main(void)
+int main(char line[MAXIMUM_LINE_LENGTH], char *args[MAXIMUM_ARGS], int state)
 {
-char line[MAXIMUM_LINE_LENGTH];
-char *args[MAXIMUM_ARGS];
-int state;
 while (1)
 {
 printf("simple_shell ");
