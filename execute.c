@@ -1,99 +1,97 @@
 #include "main.h"
-
-#define MAX_INPUT_LENGTH 100
-#define MAX_PATH_LENGTH 1024
 /**
- * display_prompt - Displays the shell prompt
+ * print_prompt - Prints the shell prompt.
  */
-void display_prompt(void)
+void print_prompt(void)
 {
-	printf("cisfun$ ");
+	printf("#cisfun$ ");
 }
 
 /**
- * execute_command_with_full_path - Executes the given command using fork
- * with a specified full path to the executable.
- * @command: The command to execute
- * @full_path: The full path to the executable
- * Return: 0 on success, 1 on failure
+ * read_command - Reads a command from the user.
+ * @line: Pointer to the buffer where the command is stored.
+ * @len: Maximum length of the buffer.
+ *
+ * Return: The number of bytes read, or -1 on failure.
  */
-int execute_command_with_full_path(char *command, char *full_path)
+int read_command(char **line, size_t *len)
 {
-	int status;
-	char *args[MAX_INPUT_LENGTH];
-	int arg_count = 0;
-	char *token;
-	pid_t pid = fork();
+	ssize_t nread;
 
-	if (pid == -1)
+	nread = getline(line, len, stdin);
+	return (nread);
+}
+/**
+ * execute_command - Executes a command in a child process.
+ * @args: Array of command arguments.
+ */
+void execute_command(char *args[])
+{
+	pid_t pid = fork();
+	int status;
+
+	if (pid < 0)
 	{
 		perror("Fork failed");
-		return (1);
+		exit(EXIT_FAILURE);
 	}
-	if (pid == 0)
+	else if (pid == 0)
 	{
-		token = strtok(command, " ");
-		while (token != NULL && arg_count < MAX_INPUT_LENGTH - 1)
-		{
-			args[arg_count++] = token;
-			token = strtok(NULL, " ");
-		}
-		args[arg_count] = NULL;
-		execv(full_path, args);
+		execvp(args[0], args);
 		perror("Execution failed");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	else
 	{
 		waitpid(pid, &status, 0);
-		return (0);
 	}
 }
-
 /**
- * execute_command - Executes the given command using fork and exec,
- * searching for the command in the directories specified by the PATH.
- * @command: The command to execute
- * Return: 0 on success, 1 on failure
+ * execute_with_path - Execute a command using the PATH environment variable.
+ * @command: The command to execute.
+ *
+ * This function attempts to execute the specified command by searching for
+ * it in the directories listed in the PATH environment variable. If the
+ * command is found and is executable, it is executed. If not found or not
+ * executable, an appropriate message is displayed.
  */
-int execute_command(char *command)
+void execute_with_path(char *command)
 {
-	char *args[MAX_INPUT_LENGTH];
-	char *path_env;
-	char *path_token;
-	char full_path[MAX_PATH_LENGTH];
-	char *token;
+	char *path;
+	int is_ls;
+	char *dir;
+	char *path_copy;
+	char executable[MAX_PATH_LENGTH];
+	char *args[2];
 
-	token = strtok(command, " ");
-	if (token == NULL)
+	path = getenv("PATH");
+	if (path == NULL)
 	{
-		fprintf(stderr, "Invalid command\n");
-		return (1);
+		printf("Could not get PATH environment variable.\n");
+		return;
 	}
-	args[0] = token;
-	path_env = getenv("PATH");
-	if (path_env == NULL)
+	path_copy = strdup(path);
+	if (path_copy == NULL)
 	{
-		fprintf(stderr, "PATH environment variable not set\n");
-		return (1);
+		perror("Memory allocation failed");
+		return;
 	}
-	path_token = strtok(path_env, ":");
-	while (path_token != NULL)
+	dir = strtok(path_copy, ":");
+	is_ls = (strcmp(command, "ls") == 0);
+	while (dir != NULL)
 	{
-		if (args[0][0] == '/')
+		snprintf(executable, MAX_PATH_LENGTH, "%s/%s", dir, command);
+		if ((access(executable, X_OK) == 0)
+			&& (is_ls || strcmp(command, executable) == 0))
 		{
-		snprintf(full_path, MAX_PATH_LENGTH, "%s", args[0]);
+			args[0] = executable;
+			args[1] = NULL;
+			execute_command(args);
+			free(path_copy);
+			return;
 		}
-		else
-		{
-			snprintf(full_path, MAX_PATH_LENGTH, "%s/%s", path_token, args[0]);
-		}
-		if (access(full_path, F_OK) != -1)
-		{
-			return (execute_command_with_full_path(command, full_path));
-		}
-		path_token = strtok(NULL, ":");
+		dir = strtok(NULL, ":");
 	}
-	printf("Command not found: %s\n", args[0]);
-	return (1);
+	printf("%s: command not found\n", command);
+	free(path_copy);
 }

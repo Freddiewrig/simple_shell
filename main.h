@@ -1,14 +1,15 @@
 #ifndef MAIN_H
 #define MAIN_H
-#define MAX_INPUT_LENGTH 100
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-void display_prompt(void);
-int execute_command(char *command);
-int execute_command_with_full_path(char *command, char *full_path);
+#include <string.h>
+#define MAX_PATH_LENGTH 1024
+#define MAX_ARGS 100
+void print_prompt(void);
+int read_command(char **line, size_t *len);
+void execute_with_path(char *command);
+void execute_command(char *args[]);
 #endif

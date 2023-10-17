@@ -1,32 +1,45 @@
-#include <stdio.h>
 #include "main.h"
 /**
- * main - Entry point for the simple shell program
- * Return: Always 0
+ * main - entry
+ * Return: 0
  */
 int main(void)
 {
-	char input[MAX_INPUT_LENGTH];
-	int result;
+	char *line = NULL;
+	char *token;
+	size_t len = 0;
+	int num_args;
+	char *args[MAX_ARGS];
 
 	while (1)
 	{
-		display_prompt();
-		if (fgets(input, MAX_INPUT_LENGTH, stdin) == NULL)
+		print_prompt();
+		if (read_command(&line, &len) == -1)
 		{
-			printf("\n");
 			break;
 		}
-		input[strcspn(input, "\n")] = '\0';
-		if (strlen(input) == 0)
+		if (strcmp(line, "exit\n") == 0)
+		{
+			break;
+		}
+		if (strcmp(line, "\n") == 0)
 		{
 			continue;
 		}
-		result = execute_command(input);
-		if (result != 0)
+		num_args = 0;
+		token = strtok(line, " \n");
+		while (token != NULL)
 		{
-			printf("Command execution failed.\n");
+			args[num_args++] = token;
+			token = strtok(NULL, " \n");
 		}
+		if (access(args[0], X_OK) != 0)
+		{
+			printf("'%s' is not a valid executable.\n", args[0]);
+			continue;
+		}
+		execute_command(args);
 	}
+	free(line);
 	return (0);
 }
