@@ -1,45 +1,50 @@
 #include "main.h"
 /**
- * main - entry
- * Return: 0
- */
-int main(void)
-{
-	char *line = NULL;
-	char *token;
-	size_t len = 0;
-	int num_args;
-	char *args[MAX_ARGS];
+* main - carries out the read, execute then print output loop
+* @agc: argument count
+* @agv: argument vector
+* @envp: environment
+*
+* Return: 0
+*/
 
+int main(int agc, char **agv, char *envp[])
+{
+	char *line = NULL, *pathcommand = NULL, *path = NULL;
+	size_t bufsize = 0;
+	ssize_t linesize = 0;
+	char **command = NULL, **paths = NULL;
+	(void)envp, (void)agv;
+	if (agc < 1)
+		return (-1);
+	signal(SIGINT, handle_signal);
 	while (1)
 	{
+		free_buffers(command);
+		free_buffers(paths);
+		free(pathcommand);
 		print_prompt();
-		if (read_command(&line, &len) == -1)
-		{
+		linesize = getline(&line, &bufsize, stdin);
+		if (linesize < 0)
 			break;
-		}
-		if (strcmp(line, "exit\n") == 0)
-		{
-			break;
-		}
-		if (strcmp(line, "\n") == 0)
-		{
+		info.ln_count++;
+		if (line[linesize - 1] == '\n')
+			line[linesize - 1] = '\0';
+		command = tokenizer(line);
+		if (command == NULL || *command == NULL || **command == '\0')
 			continue;
-		}
-		num_args = 0;
-		token = strtok(line, " \n");
-		while (token != NULL)
-		{
-			args[num_args++] = token;
-			token = strtok(NULL, " \n");
-		}
-		if (access(args[0], X_OK) != 0)
-		{
-			printf("'%s' is not a valid executable.\n", args[0]);
+		if (check_built(command, line))
 			continue;
-		}
-		execute_command(args);
+		path = find_path();
+		paths = tokenizer(path);
+		pathcommand = test_path(paths, command[0]);
+		if (!pathcommand)
+			perror(agv[0]);
+		else
+			execution(pathcommand, command);
 	}
+	if (linesize < 0 && flags.interactive)
+		write(STDERR_FILENO, "\n", 1);
 	free(line);
 	return (0);
 }

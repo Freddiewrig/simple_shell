@@ -1,97 +1,74 @@
 #include "main.h"
-/**
- * print_prompt - Prints the shell prompt.
- */
-void print_prompt(void)
-{
-	printf("#cisfun$ ");
-}
 
 /**
- * read_command - Reads a command from the user.
- * @line: Pointer to the buffer where the command is stored.
- * @len: Maximum length of the buffer.
- *
- * Return: The number of bytes read, or -1 on failure.
- */
-int read_command(char **line, size_t *len)
+* find_path - finds the path from the global enviroment
+* Return: NULL if path is not found or path if path is found.
+*/
+char *find_path(void)
 {
-	ssize_t nread;
+	int x;
+	char **env = environ, *path = NULL;
 
-	nread = getline(line, len, stdin);
-	return (nread);
-}
-/**
- * execute_command - Executes a command in a child process.
- * @args: Array of command arguments.
- */
-void execute_command(char *args[])
-{
-	pid_t pid = fork();
-	int status;
-
-	if (pid < 0)
+	while (*env)
 	{
-		perror("Fork failed");
-		exit(EXIT_FAILURE);
-	}
-	else if (pid == 0)
-	{
-		execvp(args[0], args);
-		perror("Execution failed");
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		waitpid(pid, &status, 0);
-	}
-}
-/**
- * execute_with_path - Execute a command using the PATH environment variable.
- * @command: The command to execute.
- *
- * This function attempts to execute the specified command by searching for
- * it in the directories listed in the PATH environment variable. If the
- * command is found and is executable, it is executed. If not found or not
- * executable, an appropriate message is displayed.
- */
-void execute_with_path(char *command)
-{
-	char *path;
-	int is_ls;
-	char *dir;
-	char *path_copy;
-	char executable[MAX_PATH_LENGTH];
-	char *args[2];
-
-	path = getenv("PATH");
-	if (path == NULL)
-	{
-		printf("Could not get PATH environment variable.\n");
-		return;
-	}
-	path_copy = strdup(path);
-	if (path_copy == NULL)
-	{
-		perror("Memory allocation failed");
-		return;
-	}
-	dir = strtok(path_copy, ":");
-	is_ls = (strcmp(command, "ls") == 0);
-	while (dir != NULL)
-	{
-		snprintf(executable, MAX_PATH_LENGTH, "%s/%s", dir, command);
-		if ((access(executable, X_OK) == 0)
-			&& (is_ls || strcmp(command, executable) == 0))
+		if (_strncmp(*env, "PATH=", 5) == 0)
 		{
-			args[0] = executable;
-			args[1] = NULL;
-			execute_command(args);
-			free(path_copy);
-			return;
+			path = *env;
+			while (*path && x < 5)
+			{
+				path++;
+				x++;
+			}
+			return (path);
 		}
-		dir = strtok(NULL, ":");
+		env++;
 	}
-	printf("%s: command not found\n", command);
-	free(path_copy);
+	return (NULL);
+}
+/**
+* print_env - prints the environment string to stdout
+*
+* Return: 0
+*/
+void print_env(void)
+{
+	int x = 0;
+	char **env = environ;
+
+	while (env[x])
+	{
+		write(STDOUT_FILENO, (const void *)env[x], _strlen(env[x]));
+		write(STDOUT_FILENO, "\n", 1);
+		x++;
+	}
+}
+/**
+* _putchar - writes the character c to stdout
+* @c: The character to print
+*
+* Return: On success 1.
+* On error, -1 is returned and errno set appropriately
+*/
+int _putchar(char c)
+{
+	return (write(1, &c, 1));
+}
+
+/**
+* print_s - prints a string
+* @s: string to be printed
+*
+* Return: number of characters printed
+*/
+int print_s(char *s)
+{
+	int i = 0;
+
+	while (s[i] != '\0')
+	{
+		_putchar(s[i]);
+		i++;
+	}
+
+	return (i);
 }
