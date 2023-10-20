@@ -1,5 +1,7 @@
 #include "main.h"
-
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 /**
 * free_buffers - frees buffers
 * @buf: buffer to be freed

@@ -1,4 +1,8 @@
 #include "main.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 /**
 * main - carries out the read, execute then print output loop
 * @agc: argument count
